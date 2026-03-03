@@ -23,17 +23,11 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await this.prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-      },
+      data: { name, email, password: hashedPassword },
+      select: { id: true, name: true, email: true, role: true },
     });
 
-    return {
-      message: 'User created successfully',
-      userId: user.id,
-    };
+    return { message: 'User created successfully', userId: user.id };
   }
 
   async login(email: string, password: string) {
@@ -45,11 +39,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const passwordValid = await bcrypt.compare(password, user.password);
-
-    if (!passwordValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) throw new UnauthorizedException('Invalid credentials');
 
     const token = this.jwtService.sign({
       userId: user.id,
